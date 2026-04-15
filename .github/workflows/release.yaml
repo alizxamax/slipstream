@@ -6,7 +6,7 @@ on:
       - "v*.*.*"
 
 env:
-  BUILD_TYPE: Release
+  BUILD_TYPE: release
 
 jobs:
   build:
@@ -23,31 +23,25 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt install -y pkg-config libssl-dev ninja-build
+          # در اینجا ابزار meson اضافه شد
+          sudo apt install -y pkg-config libssl-dev ninja-build meson
 
-      - name: Configure CMake
+      - name: Configure Meson
         run: |
-          cmake \
-            -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
-            -DCMAKE_MAKE_PROGRAM=ninja \
-            -DCMAKE_C_COMPILER=clang \
-            -DCMAKE_CXX_COMPILER=clang++ \
-            -G Ninja \
-            -S ${{github.workspace}} \
-            -B ${{github.workspace}}/build
+          # کانفیگ پروژه با ابزار meson
+          meson setup build --buildtype=${{env.BUILD_TYPE}}
 
-      - name: Build with CMake
+      - name: Build Project
         run: |
-          cmake \
-            --build ${{github.workspace}}/build \
-            -j $(nproc) \
-            --target slipstream-client slipstream-server
+          # بیلد کردن پروژه
+          ninja -C build
 
       - name: Rename Binaries
         run: |
           VERSION=${{ github.ref_name }}
-          mv ${{github.workspace}}/build/slipstream-client ${{github.workspace}}/build/slipstream-client-${VERSION}-linux-x86_64
-          mv ${{github.workspace}}/build/slipstream-server ${{github.workspace}}/build/slipstream-server-${VERSION}-linux-x86_64
+          # تغییر نام باینری‌های ساخته شده
+          mv build/slipstream-client build/slipstream-client-${VERSION}-linux-x86_64
+          mv build/slipstream-server build/slipstream-server-${VERSION}-linux-x86_64
 
       - name: Release
         uses: softprops/action-gh-release@v2
